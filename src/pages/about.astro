@@ -1,0 +1,61 @@
+---
+import Base from '../layouts/Base.astro';
+import { anonClient } from '../lib/supabase';
+import { safeHtml } from '../lib/sanitize';
+
+export const prerender = false;
+
+const FALLBACK_BODY = `
+  <p>Core &amp; Flow Pilates Studio opened on South Congress in 2019 with a single reformer bed and a belief that Pilates works best in small groups, taught by instructors who actually know your name and your history.</p>
+  <p>Seven years later, we're still that studio. Classes cap at eight so instructors can adjust springs, straps, and cues for the body in front of them &mdash; not shout generic corrections across a packed room. Every instructor holds a comprehensive certification (Balanced Body, Polestar, or BASI) plus additional training in the specialty they teach, whether that's prenatal work, athletic conditioning, or barre.</p>
+  <p>We believe Pilates should feel like precision, not punishment. You'll leave stronger and more mobile than you arrived, not wrecked for two days. That's the whole philosophy, and it's why so many of our members have been coming back for years.</p>
+`;
+
+const sb = anonClient();
+let page: { title: string; meta_title: string | null; meta_description: string | null; body_html: string | null } | null = null;
+if (sb) {
+  const { data } = await sb
+    .from('pages')
+    .select('title, meta_title, meta_description, body_html')
+    .eq('slug', 'about')
+    .not('published_at', 'is', null)
+    .maybeSingle();
+  page = data;
+}
+
+const title = page?.meta_title || 'About Us | Core & Flow Pilates Studio Austin';
+const description = page?.meta_description || "Meet the studio behind Austin's boutique reformer and mat Pilates classes. Small groups, certified instructors, real results.";
+const bodyHtml = page?.body_html || FALLBACK_BODY;
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://coreandflowpilates.com';
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    name: 'About Core & Flow Pilates Studio',
+    url: `${siteUrl}/about`,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'About', item: `${siteUrl}/about` },
+    ],
+  },
+];
+---
+
+<Base title={title} description={description} structuredData={structuredData}>
+  <section class="mx-auto max-w-3xl px-6 py-16">
+    <p class="text-xs font-medium uppercase tracking-[0.2em] text-accent">Our story</p>
+    <h1 class="mt-3 font-display text-5xl font-semibold tracking-tight text-ink">About Core &amp; Flow</h1>
+    <article class="prose prose-lg mt-8 max-w-none text-muted [&_p]:leading-relaxed">
+      <div set:html={safeHtml(bodyHtml)} />
+    </article>
+    <div class="mt-12 flex flex-wrap gap-4 border-t border-line pt-8">
+      <a href="/instructors" class="rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-all hover:bg-accent hover:-translate-y-0.5">Meet the instructors</a>
+      <a href="/classes" class="rounded-full border border-ink px-6 py-3 text-sm font-medium text-ink transition-all hover:bg-ink hover:text-paper">Browse classes</a>
+    </div>
+  </section>
+</Base>

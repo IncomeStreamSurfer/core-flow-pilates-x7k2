@@ -1,0 +1,51 @@
+---
+import Base from '../../layouts/Base.astro';
+import { stripe } from '../../lib/stripe';
+
+export const prerender = false;
+
+const sessionId = Astro.url.searchParams.get('session_id');
+let details: { className: string; amount: string; currency: string; email: string; bookingRef: string; when: string } | null = null;
+
+if (sessionId) {
+  try {
+    const session = await stripe().checkout.sessions.retrieve(sessionId);
+    const md = session.metadata ?? {};
+    const startsAt = md.session_starts_at ? new Date(md.session_starts_at as string) : null;
+    details = {
+      className: (md.class_name as string) ?? 'Your class',
+      amount: ((session.amount_total ?? 0) / 100).toFixed(2),
+      currency: (session.currency ?? 'usd').toUpperCase(),
+      email: session.customer_details?.email ?? '',
+      bookingRef: sessionId.slice(-10).toUpperCase(),
+      when: startsAt ? startsAt.toLocaleString('en-US', { weekday: 'long', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '',
+    };
+  } catch {
+    details = null;
+  }
+}
+---
+
+<Base title="Booking Confirmed | Core & Flow Pilates Studio" description="Your Pilates class booking is confirmed." noindex={true}>
+  <section class="mx-auto max-w-2xl px-6 py-24 text-center">
+    <p class="text-xs font-medium uppercase tracking-[0.2em] text-accent">Booking confirmed</p>
+    <h1 class="mt-3 font-display text-4xl font-semibold tracking-tight text-ink sm:text-5xl">You're all set!</h1>
+    {details ? (
+      <div class="mx-auto mt-10 max-w-md rounded-lg border border-line p-8 text-left">
+        <p class="font-display text-xl text-ink">{details.className}</p>
+        {details.when && <p class="mt-1 text-sm text-muted">{details.when}</p>}
+        <div class="mt-6 space-y-2 border-t border-line pt-4 text-sm text-muted">
+          <p><span class="text-ink">Paid:</span> {details.currency} {details.amount}</p>
+          <p><span class="text-ink">Booking ref:</span> {details.bookingRef}</p>
+          {details.email && <p><span class="text-ink">Confirmation sent to:</span> {details.email}</p>}
+        </div>
+      </div>
+    ) : (
+      <p class="mt-6 text-muted">Your payment went through — check your email for the confirmation. If you don't see it in a minute, check spam or give us a call.</p>
+    )}
+    <div class="mt-10 flex flex-wrap justify-center gap-4">
+      <a href="/schedule" class="rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-all hover:bg-accent hover:-translate-y-0.5">Book another class</a>
+      <a href="/" class="rounded-full border border-ink px-6 py-3 text-sm font-medium text-ink transition-all hover:bg-ink hover:text-paper">Back to home</a>
+    </div>
+  </section>
+</Base>

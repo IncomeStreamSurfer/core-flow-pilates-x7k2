@@ -1,0 +1,75 @@
+---
+import Base from '../layouts/Base.astro';
+import { CLASS_TYPES } from '../lib/data';
+
+const packages = [
+  { name: 'Drop-in class', price: 'From $28', detail: 'Any single mat, reformer, prenatal, or barre fusion class.', cta: '/schedule' },
+  { name: '5-Class Pack', price: '$175', detail: '$35/class average. Valid 3 months from purchase, any class type.', cta: '/book' },
+  { name: '10-Class Pack', price: '$320', detail: '$32/class average. Our most popular option. Valid 6 months.', cta: '/book' },
+  { name: 'Unlimited Monthly', price: '$219/mo', detail: 'Unlimited mat, reformer, and barre fusion classes. Month-to-month, cancel anytime.', cta: '/book' },
+];
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://coreandflowpilates.com';
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Pricing', item: `${siteUrl}/pricing` },
+    ],
+  },
+];
+---
+
+<Base
+  title="Pricing & Packages | Core & Flow Pilates Studio Austin"
+  description="See per-class rates and class packages for reformer, mat, prenatal, and barre fusion Pilates at Core & Flow in Austin, TX."
+  structuredData={structuredData}
+>
+  <section class="mx-auto max-w-6xl px-6 pb-8 pt-16">
+    <p class="text-xs font-medium uppercase tracking-[0.2em] text-accent">Simple, transparent pricing</p>
+    <h1 class="mt-3 font-display text-5xl font-semibold tracking-tight text-ink">Pricing &amp; packages</h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
+      Pay per class or save with a package. Every rate below is exactly what you'll be charged at checkout — no hidden membership fees, no long-term contracts.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 py-8">
+    <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      {packages.map((p, i) => (
+        <div class:list={["flex flex-col rounded-lg border p-6", i === 2 ? "border-accent bg-[#f3ece1]" : "border-line"]}>
+          {i === 2 && <p class="mb-2 text-xs font-medium uppercase tracking-wide text-accent">Most popular</p>}
+          <p class="font-display text-xl text-ink">{p.name}</p>
+          <p class="mt-3 font-display text-3xl text-ink">{p.price}</p>
+          <p class="mt-3 flex-1 text-sm leading-relaxed text-muted">{p.detail}</p>
+          <a href={p.cta} class="mt-6 rounded-full border border-ink px-5 py-2.5 text-center text-sm font-medium text-ink transition-all hover:bg-ink hover:text-paper">
+            Get started
+          </a>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="border-t border-line bg-[#f3ece1]">
+    <div class="mx-auto max-w-6xl px-6 py-16">
+      <h2 class="font-display text-3xl font-semibold tracking-tight text-ink">Per-class rates by format</h2>
+      <div class="mt-8 divide-y divide-line border-y border-line">
+        {CLASS_TYPES.map((c) => (
+          <div class="flex items-center justify-between py-4">
+            <div>
+              <a href={`/classes/${c.slug}`} class="font-medium text-ink hover:text-accent">{c.name}</a>
+              <p class="text-sm text-muted">{c.duration_minutes} min &middot; {c.level}</p>
+            </div>
+            <p class="font-display text-xl text-ink">${(c.price_cents / 100).toFixed(0)}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 py-16 text-center">
+    <h2 class="font-display text-3xl font-semibold tracking-tight text-ink">Ready to book?</h2>
+    <a href="/book" class="mt-6 inline-block rounded-full bg-accent px-8 py-3.5 text-sm font-medium text-paper transition-all hover:bg-accent-dark hover:-translate-y-0.5">Book your first class</a>
+  </section>
+</Base>
