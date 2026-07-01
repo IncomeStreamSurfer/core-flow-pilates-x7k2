@@ -1,0 +1,75 @@
+---
+import Base from '../../layouts/Base.astro';
+import { anonClient } from '../../lib/supabase';
+import { CLASS_TYPES } from '../../lib/data';
+
+const sb = anonClient();
+let classes = CLASS_TYPES;
+if (sb) {
+  const { data } = await sb
+    .from('classes')
+    .select('slug, name, short_description, duration_minutes, price_cents, level, image_url')
+    .not('published_at', 'is', null);
+  if (data && data.length) classes = data as any;
+}
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://coreandflowpilates.com';
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Pilates Classes in Austin',
+  url: `${siteUrl}/classes`,
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: classes.map((c, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: `${siteUrl}/classes/${c.slug}`,
+      name: c.name,
+    })),
+  },
+};
+---
+
+<Base
+  title="Pilates Classes in Austin | Core & Flow"
+  description="Browse reformer, mat, prenatal, barre fusion, and private Pilates classes in Austin. Find the right class and book online."
+  structuredData={structuredData}
+>
+  <section class="mx-auto max-w-6xl px-6 pb-8 pt-16">
+    <p class="text-xs font-medium uppercase tracking-[0.2em] text-accent">Class formats</p>
+    <h1 class="mt-3 font-display text-5xl font-semibold tracking-tight text-ink">Explore our Pilates classes</h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
+      From spring-loaded reformer work to gentle prenatal sessions, every Core &amp; Flow class in Austin is capped at a small group size and led by a certified instructor. New to Pilates? Start with Mat or Reformer Foundations &mdash; every class page below lists what to expect, what to wear, and real-time
+      <a href="/schedule" class="text-ink underline decoration-line underline-offset-4 hover:text-accent">schedule availability</a>.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 py-12">
+    <div class="grid gap-8 sm:grid-cols-2">
+      {classes.map((c: any) => (
+        <a href={`/classes/${c.slug}`} class="group flex flex-col overflow-hidden rounded-lg border border-line transition-all hover:-translate-y-1 hover:shadow-sm sm:flex-row">
+          <div class="aspect-[4/3] w-full overflow-hidden sm:w-2/5">
+            <img src={c.image_url} alt={`${c.name} class at Core & Flow Pilates Studio in Austin`} class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+          </div>
+          <div class="flex flex-1 flex-col justify-center p-6">
+            <p class="font-display text-xl text-ink">{c.name}</p>
+            <p class="mt-2 text-sm leading-relaxed text-muted">{c.short_description}</p>
+            <p class="mt-4 text-xs font-medium uppercase tracking-wide text-accent">{c.duration_minutes} min &middot; ${(c.price_cents / 100).toFixed(0)} &middot; {c.level}</p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="border-t border-line bg-[#f3ece1]">
+    <div class="mx-auto max-w-6xl px-6 py-16 text-center">
+      <h2 class="font-display text-3xl font-semibold tracking-tight text-ink">Not sure which class fits?</h2>
+      <p class="mx-auto mt-3 max-w-md text-muted">Check the full weekly calendar or book a private session for a fully personalized plan.</p>
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a href="/schedule" class="rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-all hover:bg-accent hover:-translate-y-0.5">View the schedule</a>
+        <a href="/book" class="rounded-full border border-ink px-6 py-3 text-sm font-medium text-ink transition-all hover:bg-ink hover:text-paper">Book a class</a>
+      </div>
+    </div>
+  </section>
+</Base>
