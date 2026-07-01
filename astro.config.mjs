@@ -8,6 +8,9 @@ export default defineConfig({
   output: 'server',
   adapter: vercel(),
   site: process.env.PUBLIC_SITE_URL || 'https://core-flow-x7k2.vercel.app',
+  security: {
+    checkOrigin: false,
+  },
   integrations: [
     sitemap({
       filter: (page) => !page.includes('/admin') && !page.includes('/api/') && !page.includes('/checkout/'),
