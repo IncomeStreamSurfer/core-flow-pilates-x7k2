@@ -1,0 +1,78 @@
+---
+import Base from '../../layouts/Base.astro';
+import { anonClient } from '../../lib/supabase';
+import { INSTRUCTORS } from '../../lib/data';
+
+const sb = anonClient();
+let instructors = INSTRUCTORS;
+if (sb) {
+  const { data } = await sb
+    .from('instructors')
+    .select('slug, name, role, specialties, short_bio, image_url')
+    .not('published_at', 'is', null)
+    .order('sort_order', { ascending: true });
+  if (data && data.length) instructors = data as any;
+}
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://coreandflowpilates.com';
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Pilates Instructors in Austin',
+  url: `${siteUrl}/instructors`,
+  mainEntity: {
+    '@type': 'ItemList',
+    itemListElement: instructors.map((i: any, idx: number) => ({
+      '@type': 'ListItem',
+      position: idx + 1,
+      url: `${siteUrl}/instructors/${i.slug}`,
+      name: i.name,
+    })),
+  },
+};
+---
+
+<Base
+  title="Pilates Instructors in Austin | Core & Flow"
+  description="Meet the certified Pilates instructors at Core & Flow Studio in Austin. Learn their specialties and book a class with them today."
+  structuredData={structuredData}
+>
+  <section class="mx-auto max-w-6xl px-6 pb-8 pt-16">
+    <p class="text-xs font-medium uppercase tracking-[0.2em] text-accent">Our team</p>
+    <h1 class="mt-3 font-display text-5xl font-semibold tracking-tight text-ink">Meet our Pilates instructors</h1>
+    <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted">
+      Every instructor at Core &amp; Flow holds a comprehensive Pilates certification plus specialty training — prenatal, rehab, or athletic conditioning. Browse bios below, then see who's teaching on the
+      <a href="/schedule" class="text-ink underline decoration-line underline-offset-4 hover:text-accent">class schedule</a>.
+    </p>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-6 py-12">
+    <div class="grid gap-10 sm:grid-cols-2">
+      {instructors.map((i: any) => (
+        <a href={`/instructors/${i.slug}`} class="group flex gap-6">
+          <div class="aspect-square w-32 shrink-0 overflow-hidden rounded-lg border border-line sm:w-40">
+            <img src={i.image_url} alt={`${i.name}, ${i.role} at Core & Flow Pilates Studio in Austin`} class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+          </div>
+          <div>
+            <p class="font-display text-xl text-ink group-hover:text-accent">{i.name}</p>
+            <p class="mt-1 text-sm text-accent">{i.role}</p>
+            <p class="mt-3 text-sm leading-relaxed text-muted">{i.short_bio}</p>
+            <p class="mt-3 text-xs uppercase tracking-wide text-muted">
+              {(i.specialties ?? []).join(' &middot; ')}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="border-t border-line bg-[#f3ece1]">
+    <div class="mx-auto max-w-6xl px-6 py-16 text-center">
+      <h2 class="font-display text-3xl font-semibold tracking-tight text-ink">Book a class with your favorite instructor</h2>
+      <div class="mt-8 flex flex-wrap justify-center gap-4">
+        <a href="/schedule" class="rounded-full bg-ink px-6 py-3 text-sm font-medium text-paper transition-all hover:bg-accent hover:-translate-y-0.5">View the schedule</a>
+        <a href="/classes" class="rounded-full border border-ink px-6 py-3 text-sm font-medium text-ink transition-all hover:bg-ink hover:text-paper">Browse classes</a>
+      </div>
+    </div>
+  </section>
+</Base>

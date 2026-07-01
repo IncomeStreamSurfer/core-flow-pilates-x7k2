@@ -1,0 +1,105 @@
+---
+import Base from '../../layouts/Base.astro';
+import { anonClient } from '../../lib/supabase';
+import { INSTRUCTORS, CLASS_TYPES } from '../../lib/data';
+
+export const prerender = false;
+
+const { slug } = Astro.params;
+
+const sb = anonClient();
+let instructor: any = INSTRUCTORS.find((i) => i.slug === slug);
+if (sb) {
+  const { data } = await sb.from('instructors').select('*').eq('slug', slug).maybeSingle();
+  if (data) instructor = data;
+}
+if (!instructor) {
+  return new Response('Not found', { status: 404 });
+}
+
+const siteUrl = import.meta.env.PUBLIC_SITE_URL || 'https://coreandflowpilates.com';
+const relatedClasses = CLASS_TYPES.filter((c) =>
+  (instructor.specialties ?? []).some((s: string) => c.name.toLowerCase().includes(s.toLowerCase().split(' ')[0]))
+);
+const classesToShow = relatedClasses.length ? relatedClasses : CLASS_TYPES.slice(0, 2);
+
+const structuredData = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name: instructor.name,
+    jobTitle: instructor.role,
+    worksFor: { '@type': 'LocalBusiness', name: 'Core & Flow Pilates Studio' },
+    description: instructor.short_bio,
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: siteUrl },
+      { '@type': 'ListItem', position: 2, name: 'Instructors', item: `${siteUrl}/instructors` },
+      { '@type': 'ListItem', position: 3, name: instructor.name, item: `${siteUrl}/instructors/${slug}` },
+    ],
+  },
+];
+---
+
+<Base
+  title={`${instructor.name} | Pilates Instructor in Austin | Core & Flow`}
+  description={`Meet ${instructor.name}, ${instructor.role} at Core & Flow Pilates Studio in Austin. ${instructor.short_bio}`}
+  structuredData={structuredData}
+>
+  <nav class="mx-auto max-w-4xl px-6 pt-8 text-xs text-muted">
+    <a href="/instructors" class="hover:text-accent">Instructors</a> <span class="mx-1">/</span> <span class="text-ink">{instructor.name}</span>
+  </nav>
+
+  <section class="mx-auto grid max-w-5xl gap-10 px-6 pb-16 pt-6 md:grid-cols-[280px_1fr] md:items-start">
+    <div class="aspect-square overflow-hidden rounded-lg border border-line">
+      <img src={instructor.image_url} alt={`${instructor.name}, ${instructor.role} at Core & Flow Pilates Studio`} class="h-full w-full object-cover" loading="eager" />
+    </div>
+    <div>
+      <h1 class="font-display text-4xl font-semibold tracking-tight text-ink">{instructor.name}</h1>
+      <p class="mt-2 text-accent">{instructor.role}</p>
+      <p class="mt-6 max-w-2xl text-lg leading-relaxed text-muted">{instructor.bio}</p>
+
+      <div class="mt-8 grid gap-6 sm:grid-cols-2">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide text-muted">Specialties</p>
+          <ul class="mt-2 space-y-1 text-sm text-ink">
+            {(instructor.specialties ?? []).map((s: string) => <li>{s}</li>)}
+          </ul>
+        </div>
+        <div>
+          <p class="text-xs font-medium uppercase tracking-wide text-muted">Certifications</p>
+          <ul class="mt-2 space-y-1 text-sm text-ink">
+            {(instructor.certifications ?? []).map((c: string) => <li>{c}</li>)}
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt-8 flex flex-wrap gap-4">
+        <a href="/schedule" class="rounded-full bg-accent px-6 py-3 text-sm font-medium text-paper transition-all hover:bg-accent-dark hover:-translate-y-0.5">See {instructor.name.split(' ')[0]}'s classes</a>
+        <a href="/book" class="rounded-full border border-ink px-6 py-3 text-sm font-medium text-ink transition-all hover:bg-ink hover:text-paper">Book a class</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="border-t border-line bg-[#f3ece1]">
+    <div class="mx-auto max-w-5xl px-6 py-14">
+      <p class="text-xs font-medium uppercase tracking-[0.2em] text-accent">Related classes</p>
+      <div class="mt-6 grid gap-6 sm:grid-cols-2">
+        {classesToShow.map((c) => (
+          <a href={`/classes/${c.slug}`} class="group flex items-center gap-4 rounded-lg border border-line bg-paper p-4 transition-all hover:-translate-y-0.5 hover:shadow-sm">
+            <div class="h-16 w-16 shrink-0 overflow-hidden rounded-md">
+              <img src={c.image_url} alt={c.name} class="h-full w-full object-cover" loading="lazy" />
+            </div>
+            <div>
+              <p class="font-display text-lg text-ink group-hover:text-accent">{c.name}</p>
+              <p class="text-xs text-muted">{c.duration_minutes} min &middot; ${(c.price_cents / 100).toFixed(0)}</p>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>
